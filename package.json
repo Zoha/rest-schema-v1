@@ -1,0 +1,26 @@
+{
+    "name": "rest-schema",
+    "version": "1.0.0",
+    "description": "create easy and powerful rest api with express and mongoose",
+    "scripts": {
+        "test": "cross-env NODE_ENV=test mocha ./tests/**/*.test.js --exit"
+    },
+    "author": "Zoha Banam <zoha.banam@gmail.com>",
+    "license": "MIT",
+    "dependencies": {
+        "collect.js": "^4.16.5",
+        "express": "^4.17.1",
+        "express-validator": "^6.1.1",
+        "lodash": "^4.17.15",
+        "moment": "^2.24.0",
+        "mongoose": "^5.6.11",
+        "mongoose-paginate-v2": "^1.3.0",
+        "urldecode": "^1.0.1"
+    },
+    "devDependencies": {
+        "chai": "^4.2.0",
+        "cross-env": "^5.2.1",
+        "mocha": "^6.2.0",
+        "supertest": "^4.0.2"
+    }
+}
