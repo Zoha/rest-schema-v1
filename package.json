@@ -2,6 +2,7 @@
     "name": "rest-schema",
     "version": "1.0.0",
     "description": "create easy and powerful rest api with express and mongoose",
+    "main": "src/restSchema/index.js",
     "scripts": {
         "test": "cross-env NODE_ENV=test mocha ./tests/**/*.test.js --exit"
     },
