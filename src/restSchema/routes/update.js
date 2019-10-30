@@ -10,6 +10,7 @@ const hook = require("../hook");
 const getFromSchema = require("../getFromSchema");
 const _ = require("lodash");
 const getFieldsFromRequest = require("../getFieldsFromRequest");
+const getOnlySelectedFields = require("../getOnlySelectedFields");
 
 const getUpdatableFields = originalFields => {
     let fields = _.cloneDeep(originalFields);
@@ -95,7 +96,7 @@ module.exports = schema => {
 
                 record = await model.findOne({ _id: record._id });
 
-                const response = await resultFields(
+                const result = await resultFields(
                     req,
                     routeFields,
                     type,
@@ -104,12 +105,18 @@ module.exports = schema => {
                     fields
                 );
 
+                const response = getOnlySelectedFields({
+                    fields: result,
+                    req
+                });
+
                 await hook("beforeResponse", {
                     schema,
                     req,
                     fields,
                     type,
                     record,
+                    result,
                     response,
                     res
                 });
@@ -122,6 +129,7 @@ module.exports = schema => {
                     fields,
                     type,
                     record,
+                    result,
                     response
                 });
 

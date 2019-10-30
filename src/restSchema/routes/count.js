@@ -2,7 +2,6 @@ const collect = require("collect.js");
 const { query } = require("../../validate");
 const filter = require("../../filter");
 const routeMiddleware = require("../routeMiddleware");
-const resultFields = require("../resultFields");
 const doValidations = require("../doValidations");
 const hook = require("../hook");
 const getFromSchema = require("../getFromSchema");

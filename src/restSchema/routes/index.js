@@ -6,6 +6,7 @@ const resultFields = require("../resultFields");
 const doValidations = require("../doValidations");
 const hook = require("../hook");
 const getFromSchema = require("../getFromSchema");
+const getOnlySelectedFields = require("../getOnlySelectedFields");
 
 module.exports = schema => {
     const router = require("express").Router();
@@ -28,10 +29,10 @@ module.exports = schema => {
                     return;
                 }
 
-                // get paginate result
+                // get paginate paginationResult
                 // for paginate we using filter module and paginate plugin for mongoose
 
-                const result = await filter(model, req, {
+                const paginationResult = await filter(model, req, {
                     filters: {
                         ...(schema.filters.global
                             ? typeof schema.filters.global === "function"
@@ -65,7 +66,7 @@ module.exports = schema => {
                 });
 
                 const docs = [];
-                for (let record of result["docs"]) {
+                for (let record of paginationResult["docs"]) {
                     docs.push(
                         await resultFields(
                             req,
@@ -77,40 +78,46 @@ module.exports = schema => {
                         )
                     );
                 }
-                result["docs"] = docs;
+                paginationResult["docs"] = docs;
 
                 const range = {
-                    start: result.offset
-                        ? result.offset
-                        : (result.page - 1) * result.limit,
-                    end: result.offset
-                        ? result.offset + result.docs.length
-                        : (result.page - 1) * result.limit + result.docs.length
+                    start: paginationResult.offset
+                        ? paginationResult.offset
+                        : (paginationResult.page - 1) * paginationResult.limit,
+                    end: paginationResult.offset
+                        ? paginationResult.offset + paginationResult.docs.length
+                        : (paginationResult.page - 1) * paginationResult.limit +
+                          paginationResult.docs.length
                 };
 
-                const response = result.docs;
+                const result = paginationResult.docs;
+
+                const response = result.map(i => {
+                    return getOnlySelectedFields({ fields: i, req });
+                });
 
                 await hook("beforeResponse", {
                     schema,
                     req,
                     fields,
                     type,
-                    response,
                     result,
+                    response,
+                    paginationResult,
                     res
                 });
 
                 res.set({
-                    "x-total": result.totalDocs,
-                    "x-range": `${range.start}-${range.end}/${result.totalDocs}`,
-                    "x-limit": result.limit,
-                    "x-offset": result.offset,
-                    "x-page": result.page,
-                    "x-prev-page": result.prevPage,
-                    "x-next-page": result.nextPage,
-                    "x-has-prev-page": result.hasPrevPage,
-                    "x-has-next-page": result.hasNextPage,
-                    "x-total": result.totalDocs,
+                    "x-total": paginationResult.totalDocs,
+                    "x-range": `${range.start}-${range.end}/${paginationResult.totalDocs}`,
+                    "x-limit": paginationResult.limit,
+                    "x-offset": paginationResult.offset,
+                    "x-page": paginationResult.page,
+                    "x-prev-page": paginationResult.prevPage,
+                    "x-next-page": paginationResult.nextPage,
+                    "x-has-prev-page": paginationResult.hasPrevPage,
+                    "x-has-next-page": paginationResult.hasNextPage,
+                    "x-total": paginationResult.totalDocs,
                     "Access-Control-Expose-Headers":
                         "x-total, x-range, x-limit, x-offset, x-page, x-prev-page, x-next-page, x-total , x-has-next-page, x-has-prev-page"
                 }).json(response);
@@ -120,8 +127,9 @@ module.exports = schema => {
                     req,
                     fields,
                     type,
+                    result,
                     response,
-                    result
+                    paginationResult
                 });
 
                 return;

@@ -162,4 +162,21 @@ describe("single route of schema resource", () => {
                 expect(response.custom).to.be.equal("custom_name");
             });
     });
+
+    it("it will return selected fields only", async () => {
+        let record = await Model.create({
+            name: "name",
+            somethingElse: "somethingElse"
+        });
+        await request(app)
+            .get("/default/name?select=somethingElse")
+            .expect(200)
+            .expect("Content-type", /json/)
+            .expect(res => {
+                const response = JSON.parse(res.text);
+                expect(response).to.be.an("object");
+                expect(response).to.not.haveOwnProperty("name");
+                expect(response).to.not.haveOwnProperty("somethingElse");
+            });
+    });
 });

@@ -3,6 +3,7 @@ const resultFields = require("../resultFields");
 const findRecord = require("../findRecord");
 const hook = require("../hook");
 const getFromSchema = require("../getFromSchema");
+const getOnlySelectedFields = require("../getOnlySelectedFields");
 
 module.exports = schema => {
     const router = require("express").Router();
@@ -39,7 +40,7 @@ module.exports = schema => {
                 // delete the record
                 await record.deleteOne();
 
-                const response = await resultFields(
+                const result = await resultFields(
                     req,
                     routeFields,
                     type,
@@ -48,11 +49,17 @@ module.exports = schema => {
                     fields
                 );
 
+                const response = getOnlySelectedFields({
+                    req,
+                    fields: result
+                });
+
                 await hook("beforeResponse", {
                     schema,
                     req,
                     fields,
                     type,
+                    result,
                     record,
                     response,
                     res
@@ -65,6 +72,7 @@ module.exports = schema => {
                     req,
                     fields,
                     type,
+                    result,
                     record,
                     response
                 });

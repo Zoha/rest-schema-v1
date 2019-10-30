@@ -12,14 +12,12 @@ const schema = new mongoose.Schema({
     hide1: String,
     hide2: String,
     boolean: Boolean,
-    notCreatable: String,
+    notUpdatable: String,
     custom: String,
-    array: Array,
-    array2: Array,
-    object: Object
+    array: []
 });
 schema.plugin(mongoosePaginate);
-const Model = mongoose.model("Schema3", schema);
+const Model = mongoose.model("Schema4", schema);
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -27,7 +25,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
     "/default",
     resource({
-        model: mongoose.model("Schema3"),
+        model: mongoose.model("Schema4"),
         fields: {
             name: {
                 type: String
@@ -47,15 +45,15 @@ app.use(
             boolean: {
                 type: Boolean
             },
-            notCreatable: {
+            notUpdatable: {
                 type: String,
-                creatable: false,
+                updatable: false,
                 get: "something"
             },
             custom: {
                 type: String,
-                set: "custom_name",
-                get: "custom_name"
+                get: "custom_name",
+                set: "custom_name"
             }
         },
         routeKeys: ["name"]
@@ -65,8 +63,9 @@ app.use(
 app.use(
     "/default2",
     resource({
-        model: mongoose.model("Schema3"),
+        model: mongoose.model("Schema4"),
         fields: {
+            name: String,
             array: {
                 type: [
                     {
@@ -85,67 +84,38 @@ app.use(
                                 hide: true,
                                 get: val => "ok"
                             },
-                            notCreatable: {
+                            notUpdatable: {
                                 type: String,
                                 get: val => "ok",
-                                creatable: false
+                                updatable: false
                             }
                         }
                     }
-                ]
-            },
-            array2: {
-                type: [
-                    {
-                        type: {
-                            array: {
-                                type: [
-                                    {
-                                        type: {
-                                            name: {
-                                                type: String,
-                                                validate: val => val === "name",
-                                                required: true
-                                            },
-                                            score: {
-                                                type: Number,
-                                                set: val => val || 0
-                                            },
-                                            other: {
-                                                type: String,
-                                                hide: true,
-                                                get: val => "ok"
-                                            },
-                                            notCreatable: {
-                                                type: String,
-                                                get: val => "ok",
-                                                creatable: false
-                                            }
-                                        }
-                                    }
-                                ],
-                                required: true
-                            }
-                        }
-                    }
-                ]
+                ],
+                required: true
             }
-        }
+        },
+        routeKeys: ["name"]
     })
 );
 
-describe("create route of schema resource", () => {
+describe("update route of schema resource", () => {
     beforeEach(async () => {
         await Model.deleteMany({});
     });
 
     it("it will return fields that are in schema", async () => {
+        await Model.create({
+            name: "name",
+            boolean: false,
+            notUpdatable: "something"
+        });
         await request(app)
-            .post("/default")
+            .put("/default/name")
             .send({
-                name: "name",
+                name: "name2",
                 boolean: "string",
-                notCreatable: "something"
+                notUpdatable: "something2"
             })
             .expect(200)
             .expect("Content-type", /json/)
@@ -153,11 +123,11 @@ describe("create route of schema resource", () => {
                 const response = JSON.parse(res.text);
                 expect(response).to.be.an("object");
                 expect(response).to.haveOwnProperty("name");
-                expect(response.name).to.be.equal("name");
+                expect(response.name).to.be.equal("name2");
                 expect(response).to.haveOwnProperty("custom");
                 expect(response.custom).to.be.equal("custom_name");
                 expect(response)
-                    .to.haveOwnProperty("notCreatable")
+                    .to.haveOwnProperty("notUpdatable")
                     .that.equals("something");
             });
         const records = await Model.find({});
@@ -167,17 +137,30 @@ describe("create route of schema resource", () => {
         expect(records[0].custom).to.be.equals("custom_name");
         expect(records[0])
             .to.haveOwnProperty("name")
-            .that.equals("name");
+            .that.equals("name2");
         expect(records[0])
             .to.haveOwnProperty("boolean")
             .that.is.a("boolean")
             .and.equal(true);
-        expect(records[0]).to.not.haveOwnProperty("notCreatable");
+        expect(records[0])
+            .to.haveOwnProperty("notUpdatable")
+            .that.equals("something");
     });
 
     it("will validate type of branched array value", async () => {
+        await Model.create({
+            name: "name",
+            boolean: false,
+            array: [
+                {
+                    name: "something",
+                    other: "somethingElse",
+                    notUpdatable: "something"
+                }
+            ]
+        });
         await request(app)
-            .post("/default2")
+            .put("/default2/name")
             .send({
                 array: [
                     {
@@ -187,18 +170,18 @@ describe("create route of schema resource", () => {
             })
             .expect(400);
         await request(app)
-            .post("/default2")
+            .put("/default2/name")
             .send({
                 array: [
                     {
                         name: "name",
                         other: "something",
-                        notCreatable: "something"
+                        notUpdatable: "somethingELSE"
                     },
                     {
                         name: "name2",
                         other: "something2",
-                        notCreatable: "something2"
+                        notUpdatable: "somethingELSE2"
                     }
                 ]
             })
@@ -212,14 +195,9 @@ describe("create route of schema resource", () => {
                 expect(response.array).to.have.lengthOf(2);
                 expect(response.array[0]).to.haveOwnProperty("name");
                 expect(response.array[0].name).to.be.equal("name");
-                expect(response.array[0]).to.haveOwnProperty("notCreatable");
-                expect(response.array[0].notCreatable).to.be.equal("ok");
                 expect(response.array[0]).to.not.haveOwnProperty("other");
-
                 expect(response.array[1]).to.haveOwnProperty("name");
                 expect(response.array[1].name).to.be.equal("name2");
-                expect(response.array[1]).to.haveOwnProperty("notCreatable");
-                expect(response.array[1].notCreatable).to.be.equal("ok");
                 expect(response.array[1]).to.not.haveOwnProperty("other");
             });
         const records = await Model.find({});
@@ -229,19 +207,30 @@ describe("create route of schema resource", () => {
         expect(record).to.haveOwnProperty("array");
         expect(record.array).to.have.lengthOf(2);
         expect(record.array[0]).to.haveOwnProperty("name");
-        expect(record.array[0]).to.not.haveOwnProperty("notCreatable");
+        expect(record.array[0]).to.not.haveOwnProperty("notUpdatable");
         expect(record.array[1]).to.haveOwnProperty("name");
-        expect(record.array[1]).to.not.haveOwnProperty("notCreatable");
+        expect(record.array[1]).to.not.haveOwnProperty("notUpdatable");
     });
 
     it("will convert object to array for array field", async () => {
+        await Model.create({
+            name: "name",
+            boolean: false,
+            array: [
+                {
+                    name: "something",
+                    other: "somethingElse",
+                    notUpdatable: "something"
+                }
+            ]
+        });
         await request(app)
-            .post("/default2")
+            .put("/default2/name")
             .send({
                 array: {
                     name: "name",
                     other: "something",
-                    notCreatable: "something"
+                    notUpdatable: "somethingELSE"
                 }
             })
             .expect(200)
@@ -254,8 +243,6 @@ describe("create route of schema resource", () => {
                 expect(response.array).to.have.lengthOf(1);
                 expect(response.array[0]).to.haveOwnProperty("name");
                 expect(response.array[0].name).to.be.equal("name");
-                expect(response.array[0]).to.haveOwnProperty("notCreatable");
-                expect(response.array[0].notCreatable).to.be.equal("ok");
                 expect(response.array[0]).to.not.haveOwnProperty("other");
             });
         const records = await Model.find({});
@@ -264,70 +251,30 @@ describe("create route of schema resource", () => {
         expect(records).to.have.lengthOf(1);
         expect(record).to.haveOwnProperty("array");
         expect(record.array[0]).to.haveOwnProperty("name");
-        expect(record.array[0]).to.not.haveOwnProperty("notCreatable");
+        expect(record.array[0]).to.not.haveOwnProperty("notUpdatable");
     });
 
-    it("will validate type of branched array value for 2 level up", async () => {
+    it("it will not return unselected fields after update", async () => {
+        await Model.create({
+            name: "name",
+            boolean: false,
+            notUpdatable: "something"
+        });
         await request(app)
-            .post("/default2")
+            .put("/default/name?select=-name")
             .send({
-                array2: [
-                    {
-                        array: [
-                            {
-                                name: "invalid"
-                            }
-                        ]
-                    }
-                ]
-            })
-            .expect(400);
-        await request(app)
-            .post("/default2")
-            .send({
-                array2: [
-                    {
-                        array: [
-                            {
-                                name: "name",
-                                other: "something",
-                                notCreatable: "something"
-                            }
-                        ]
-                    }
-                ]
+                name: "name2",
+                boolean: "string",
+                notUpdatable: "something2"
             })
             .expect(200)
             .expect("Content-type", /json/)
             .expect(res => {
                 const response = JSON.parse(res.text);
                 expect(response).to.be.an("object");
-                expect(response).to.haveOwnProperty("array2");
-                expect(response.array2).to.be.an("array");
-                expect(response.array2).to.have.lengthOf(1);
-                expect(response.array2[0]).to.haveOwnProperty("array");
-                expect(response.array2[0].array).to.be.an("array");
-                expect(response.array2[0].array).to.have.lengthOf(1);
-                expect(response.array2[0].array[0].name).to.be.equal("name");
-                expect(response.array2[0].array[0]).to.haveOwnProperty(
-                    "notCreatable"
-                );
-                expect(response.array2[0].array[0].notCreatable).to.be.equal(
-                    "ok"
-                );
-                expect(response.array2[0].array[0]).to.not.haveOwnProperty(
-                    "other"
-                );
+                expect(response).to.not.haveOwnProperty("name");
+                expect(response).to.haveOwnProperty("custom");
+                expect(response).to.haveOwnProperty("notUpdatable");
             });
-        const records = await Model.find({});
-        const record = records[0].toObject();
-
-        expect(records).to.have.lengthOf(1);
-        expect(record).to.haveOwnProperty("array2");
-        expect(record.array2[0]).to.haveOwnProperty("array");
-        expect(record.array2[0].array[0]).to.haveOwnProperty("name");
-        expect(record.array2[0].array[0]).to.not.haveOwnProperty(
-            "notCreatable"
-        );
     });
 });

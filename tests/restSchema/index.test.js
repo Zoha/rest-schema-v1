@@ -814,4 +814,40 @@ describe("index route of schema resource", () => {
                 expect(response[1].name).to.be.equal("ok2");
             });
     });
+
+    it("will return just selected items", async () => {
+        await Model.create({
+            name: "something",
+            hide1: "hide1",
+            hide2: "hide2"
+        });
+        await request(app)
+            .get("/default3?select=hide1")
+            .expect(200)
+            .expect("Content-type", /json/)
+            .expect(res => {
+                const response = JSON.parse(res.text);
+                expect(response[0]).to.not.haveOwnProperty("name");
+                expect(response[0]).to.haveOwnProperty("hide1");
+                expect(response[0]).to.not.haveOwnProperty("hide2");
+            });
+    });
+
+    it("will return just selected items", async () => {
+        await Model.create({
+            name: "something",
+            hide1: "hide1",
+            hide2: "hide2"
+        });
+        await request(app)
+            .get("/default3?select=-name")
+            .expect(200)
+            .expect("Content-type", /json/)
+            .expect(res => {
+                const response = JSON.parse(res.text);
+                expect(response[0]).to.not.haveOwnProperty("name");
+                expect(response[0]).to.haveOwnProperty("hide1");
+                expect(response[0]).to.haveOwnProperty("hide2");
+            });
+    });
 });

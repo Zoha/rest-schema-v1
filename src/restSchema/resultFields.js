@@ -1,4 +1,5 @@
 const convert = require("../typeConverter");
+const _ = require("lodash");
 
 const getResultFromRecord = async (
     req,
@@ -13,6 +14,7 @@ const getResultFromRecord = async (
     if (isArray) {
         result = [];
     }
+
     for (let fieldName in routeFields) {
         const field = routeFields[fieldName];
         let value;
@@ -55,6 +57,7 @@ const getResultFromRecord = async (
         }
         result[fieldName] = value;
     }
+
     return result;
 };
 

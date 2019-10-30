@@ -68,4 +68,20 @@ describe("delete route of schema resource", () => {
         const records = await Model.find({});
         expect(records).to.have.lengthOf(0);
     });
+
+    it("will not return unSelected fields", async () => {
+        await Model.create({
+            name: "name",
+            hide1: "ok",
+            hide2: "ok"
+        });
+        await request(app)
+            .delete("/default/name?select=-name")
+            .expect(200)
+            .expect("Content-type", /json/)
+            .expect(res => {
+                const response = JSON.parse(res.text);
+                expect(response).to.not.haveOwnProperty("name");
+            });
+    });
 });
