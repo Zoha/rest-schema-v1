@@ -19,7 +19,11 @@ const getResultFromRecord = async (
         const field = routeFields[fieldName];
         let value;
 
-        if (record && record[fieldName]) {
+        if (
+            record &&
+            (record[fieldName] ||
+                (field.type === Boolean && record[fieldName] === false))
+        ) {
             value = convert(record[fieldName]).to(field.type || String);
         }
         if (value && field.isBranched) {
