@@ -46,9 +46,10 @@ const getFieldsFromRequest = async (
             if (typeof field.set === "function") {
                 value = await field.set(value, {
                     req,
-                    schema: schema,
-                    fields: fields,
-                    record: record,
+                    schema,
+                    fields,
+                    record,
+					route,
                     type: type
                 });
             } else {
