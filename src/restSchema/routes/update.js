@@ -43,7 +43,8 @@ module.exports = schema => {
                     model,
                     fields,
                     routeKeys,
-                    type
+                    type,
+					route
                 } = await getFromSchema(schema, req, "update");
 
                 await hook("before", { schema, req, fields, type, res });
@@ -90,7 +91,8 @@ module.exports = schema => {
                         req.body,
                         record,
                         schema,
-                        fields
+                        fields,
+						route
                     )
                 );
 

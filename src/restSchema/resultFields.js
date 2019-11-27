@@ -22,7 +22,8 @@ const getResultFromRecord = async (
         if (
             record &&
             (record[fieldName] ||
-                (field.type === Boolean && record[fieldName] === false))
+                (field.type === Boolean && record[fieldName] === false) ||
+                (field.type === Number && record[fieldName] === 0))
         ) {
             value = convert(record[fieldName]).to(field.type || String);
         }

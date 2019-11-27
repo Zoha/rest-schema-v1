@@ -8,6 +8,7 @@ const getFieldsFromRequest = async (
     record,
     schema,
     fields,
+	route,
     isArray = false
 ) => {
     let result = {};
@@ -37,6 +38,7 @@ const getFieldsFromRequest = async (
                 record,
                 schema,
                 fields,
+				route,
                 !!field.isArrayBranched
             );
         }

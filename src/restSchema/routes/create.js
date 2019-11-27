@@ -41,7 +41,8 @@ module.exports = schema => {
                     routeFields,
                     model,
                     fields,
-                    type
+                    type,
+					route
                 } = await getFromSchema(schema, req, "create");
 
                 await hook("before", { schema, req, fields, type, res });
@@ -73,7 +74,8 @@ module.exports = schema => {
                         req.body,
                         {},
                         schema,
-                        fields
+                        fields,
+						route
                     )
                 );
 
