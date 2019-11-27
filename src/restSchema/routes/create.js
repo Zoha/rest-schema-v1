@@ -12,113 +12,99 @@ const getFieldsFromRequest = require("../getFieldsFromRequest");
 const getOnlySelectedFields = require("../getOnlySelectedFields");
 
 const getCreatableFields = originalFields => {
-    let fields = _.cloneDeep(originalFields);
-    let creatableFields = {};
-    for (let fieldKey in fields) {
-        let field = fields[fieldKey];
+  let fields = _.cloneDeep(originalFields);
+  let creatableFields = {};
+  for (let fieldKey in fields) {
+    let field = fields[fieldKey];
 
-        if (field.creatable !== false) {
-            creatableFields[fieldKey] = field;
-            if (field.isBranched) {
-                creatableFields[fieldKey].branches = getCreatableFields(
-                    field.branches
-                );
-            }
-        }
+    if (field.creatable !== false) {
+      creatableFields[fieldKey] = field;
+      if (field.isBranched) {
+        creatableFields[fieldKey].branches = getCreatableFields(field.branches);
+      }
     }
-    return creatableFields;
+  }
+  return creatableFields;
 };
 
 module.exports = schema => {
-    const router = require("express").Router();
+  const router = require("express").Router();
 
-    router.post(
-        "/",
-        routeMiddleware(schema.middleware, "create"),
-        async (req, res, next) => {
-            try {
-                const {
-                    routeFields,
-                    model,
-                    fields,
-                    type,
-					route
-                } = await getFromSchema(schema, req, "create");
+  router.post(
+    "/",
+    routeMiddleware(schema.middleware, "create"),
+    async (req, res, next) => {
+      try {
+        const { routeFields, model, fields, route } = await getFromSchema(
+          schema,
+          req,
+          "create"
+        );
 
-                await hook("before", { schema, req, fields, type, res });
+        await hook("before", { schema, req, fields, route, res });
 
-                if (await doValidations(req, res, fields, body, type)) {
-                    return;
-                }
-
-                if (
-                    await checkUniqueFields(
-                        req,
-                        res,
-                        fields,
-                        model,
-                        schema,
-                        type
-                    )
-                ) {
-                    return;
-                }
-
-                // create the record
-                const creatableFields = getCreatableFields(fields);
-                const record = await model.create(
-                    await getFieldsFromRequest(
-                        req,
-                        creatableFields,
-                        type,
-                        req.body,
-                        {},
-                        schema,
-                        fields,
-						route
-                    )
-                );
-
-                const result = await resultFields(
-                    req,
-                    routeFields,
-                    type,
-                    record,
-                    schema,
-                    fields
-                );
-
-                const response = getOnlySelectedFields({ req, fields: result });
-
-                await hook("beforeResponse", {
-                    schema,
-                    req,
-                    fields,
-                    type,
-                    record,
-                    result,
-                    response,
-                    res
-                });
-
-                res.json(response);
-
-                await hook("after", {
-                    schema,
-                    req,
-                    fields,
-                    type,
-                    record,
-                    record,
-                    response
-                });
-
-                return;
-            } catch (e) {
-                next(e);
-            }
+        if (await doValidations(req, res, fields, body, route)) {
+          return;
         }
-    );
 
-    return router;
+        if (await checkUniqueFields(req, res, fields, model, schema, route)) {
+          return;
+        }
+
+        // create the record
+        const creatableFields = getCreatableFields(fields);
+        const record = await model.create(
+          await getFieldsFromRequest(
+            req,
+            creatableFields,
+            route,
+            req.body,
+            {},
+            schema,
+            fields
+          )
+        );
+
+        const result = await resultFields(
+          req,
+          routeFields,
+          route,
+          record,
+          schema,
+          fields
+        );
+
+        const response = getOnlySelectedFields({ req, fields: result });
+
+        await hook("beforeResponse", {
+          schema,
+          req,
+          fields,
+          route,
+          record,
+          result,
+          response,
+          res
+        });
+
+        res.json(response);
+
+        await hook("after", {
+          schema,
+          req,
+          fields,
+          route,
+          record,
+          record,
+          response
+        });
+
+        return;
+      } catch (e) {
+        next(e);
+      }
+    }
+  );
+
+  return router;
 };

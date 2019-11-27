@@ -8,88 +8,85 @@ const _ = require("lodash");
 const doValidations = require("../doValidations");
 
 module.exports = schema => {
-    const router = require("express").Router();
+  const router = require("express").Router();
 
-    router.post(
-        "/validate/:field",
-        routeMiddleware(schema.middleware, "validate"),
-        async (req, res, next) => {
-            try {
-                const { model, fields, type } = await getFromSchema(
-                    schema,
-                    req,
-                    "validate"
-                );
+  router.post(
+    "/validate/:field",
+    routeMiddleware(schema.middleware, "validate"),
+    async (req, res, next) => {
+      try {
+        const { model, fields, route } = await getFromSchema(
+          schema,
+          req,
+          "validate"
+        );
 
-                const fieldsToValidate = collect(_.cloneDeep(fields))
-                    .filter(
-                        (i, k) =>
-                            k === req.params.field && i.validationRoute === true
-                    )
-                    .all();
+        const fieldsToValidate = collect(_.cloneDeep(fields))
+          .filter(
+            (i, k) => k === req.params.field && i.validationRoute === true
+          )
+          .all();
 
-                if (!collect(fieldsToValidate).count()) {
-                    return next();
-                }
-
-                fieldsToValidate[req.params.field].required = true;
-
-                await hook("before", {
-                    schema,
-                    req,
-                    fieldsToValidate,
-                    type,
-                    res
-                });
-
-                if (
-                    await doValidations(req, res, fieldsToValidate, body, type)
-                ) {
-                    return;
-                }
-
-                if (
-                    await checkUniqueFields(
-                        req,
-                        res,
-                        fieldsToValidate,
-                        model,
-                        schema,
-                        type
-                    )
-                ) {
-                    return;
-                }
-
-                const response = {
-                    message: "input is valid"
-                };
-
-                await hook("beforeResponse", {
-                    schema,
-                    req,
-                    fields,
-                    type,
-                    response,
-                    res
-                });
-
-                res.json(response);
-
-                await hook("after", {
-                    schema,
-                    req,
-                    fields,
-                    type,
-                    response
-                });
-
-                return;
-            } catch (e) {
-                next(e);
-            }
+        if (!collect(fieldsToValidate).count()) {
+          return next();
         }
-    );
 
-    return router;
+        fieldsToValidate[req.params.field].required = true;
+
+        await hook("before", {
+          schema,
+          req,
+          fieldsToValidate,
+          route,
+          res
+        });
+
+        if (await doValidations(req, res, fieldsToValidate, body, route)) {
+          return;
+        }
+
+        if (
+          await checkUniqueFields(
+            req,
+            res,
+            fieldsToValidate,
+            model,
+            schema,
+            route
+          )
+        ) {
+          return;
+        }
+
+        const response = {
+          message: "input is valid"
+        };
+
+        await hook("beforeResponse", {
+          schema,
+          req,
+          fields,
+          route,
+          response,
+          res
+        });
+
+        res.json(response);
+
+        await hook("after", {
+          schema,
+          req,
+          fields,
+          route,
+          response
+        });
+
+        return;
+      } catch (e) {
+        next(e);
+      }
+    }
+  );
+
+  return router;
 };
