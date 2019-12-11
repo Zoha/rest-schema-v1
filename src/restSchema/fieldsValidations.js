@@ -13,11 +13,12 @@ const convertToFieldType = field => {
         if (field.isArrayBranched) {
           fieldOptionsKey = 0;
         }
-        if (value[branchKey] !== undefined) {
-          value[branchKey] = convertToFieldType(
-            field.branches[fieldOptionsKey]
-          )(value[branchKey]);
+        if(value[branchKey] !== undefined){
+            value[branchKey] = convertToFieldType(field.branches[fieldOptionsKey])(
+                value[branchKey]
+            );
         }
+        
       }
     }
     return value;
@@ -36,11 +37,12 @@ const applyCustomSanitizers = field => {
         if (field.isArrayBranched) {
           fieldOptionsKey = 0;
         }
-        if (value[branchKey] !== undefined) {
-          value[branchKey] = applyCustomSanitizers(
-            field.branches[fieldOptionsKey]
-          )(value[branchKey], options);
-        }
+          if (value[branchKey] !== undefined){
+              value[branchKey] = applyCustomSanitizers(
+                  field.branches[fieldOptionsKey]
+              )(value[branchKey], options);
+          }
+        
       }
     }
 
@@ -67,10 +69,13 @@ const applyCustomValidations = async field => {
         if (field.isArrayBranched) {
           fieldOptionsKey = 0;
         }
-        const validation = await applyCustomValidations(
-          field.branches[fieldOptionsKey]
-        );
-        await validation(value[branchKey], options);
+          if (value[branchKey] !== undefined){
+              const validation = await applyCustomValidations(
+                  field.branches[fieldOptionsKey]
+              );
+              await validation(value[branchKey], options);
+          }
+        
       }
     }
   };

@@ -1,4 +1,5 @@
 const convert = require("../typeConverter");
+const collect = require("collect.js");
 
 const getFieldsFromRequest = async (
   req,
@@ -57,7 +58,10 @@ const getFieldsFromRequest = async (
     }
     result[fieldName] = value;
   }
-  return result;
+
+  return collect(result)
+    .filter(i => i !== undefined)
+    .all();
 };
 
 module.exports = getFieldsFromRequest;
