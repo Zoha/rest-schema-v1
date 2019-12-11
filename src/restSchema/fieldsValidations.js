@@ -13,9 +13,11 @@ const convertToFieldType = field => {
         if (field.isArrayBranched) {
           fieldOptionsKey = 0;
         }
-        value[branchKey] = convertToFieldType(field.branches[fieldOptionsKey])(
-          value[branchKey]
-        );
+        if (value[branchKey] !== undefined) {
+          value[branchKey] = convertToFieldType(
+            field.branches[fieldOptionsKey]
+          )(value[branchKey]);
+        }
       }
     }
     return value;
@@ -25,7 +27,7 @@ const convertToFieldType = field => {
 const applyCustomSanitizers = field => {
   return (value, options) => {
     if (field.sanitize) {
-      value = field.sanitizer(value, options);
+      value = field.sanitize(value, options);
     }
 
     if (field.isBranched) {
@@ -34,9 +36,11 @@ const applyCustomSanitizers = field => {
         if (field.isArrayBranched) {
           fieldOptionsKey = 0;
         }
-        value[branchKey] = applyCustomSanitizers(
-          field.branches[fieldOptionsKey]
-        )(value[branchKey], options);
+        if (value[branchKey] !== undefined) {
+          value[branchKey] = applyCustomSanitizers(
+            field.branches[fieldOptionsKey]
+          )(value[branchKey], options);
+        }
       }
     }
 
@@ -96,7 +100,7 @@ module.exports = async (fields, check, route) => {
     }
 
     // sanitize
-    if ((field.sanitizer || field.isBranched) && !isGetRequest) {
+    if ((field.sanitize || field.isBranched) && !isGetRequest) {
       // if field has sanitizer apply it
       validation = validation.customSanitizer(applyCustomSanitizers(field));
     }
