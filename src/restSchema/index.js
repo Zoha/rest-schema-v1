@@ -5,6 +5,7 @@ const updateRouteModule = require("./routes/update");
 const deleteRouteModule = require("./routes/delete");
 const countRouteModule = require("./routes/count");
 const validateRouteModule = require("./routes/validate");
+const collect = require('collect.js');
 const ObjectId = require("mongoose").Schema.Types.ObjectId;
 
 module.exports = (schema = {}) => {
@@ -72,6 +73,9 @@ module.exports = (schema = {}) => {
 
     schema = { ...defaultSchema, ...schema };
 
+    if(schema.routes.filter(i => i === 'count').length){
+        schema.routes = collect(schema.routes).sort((a, b) => a == 'count' ? 10 : 1).all();
+    }
     for (let route of schema.routes) {
         if (routeModules[route]) {
             router.use(routeModules[route](schema));
