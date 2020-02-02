@@ -26,7 +26,7 @@ const convertToFieldType = field => {
 
 const applyCustomSanitizers = field => {
   return (value, options) => {
-    if (field.sanitize) {
+    if (field.sanitize && value != undefined) {
       value = field.sanitize(value, options);
     }
 
